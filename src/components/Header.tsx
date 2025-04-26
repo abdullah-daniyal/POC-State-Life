@@ -8,8 +8,8 @@ const Header: React.FC = () => {
         <div className="flex items-center space-x-3">
           <BarChart3 className="h-10 w-10" />
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold">Insurance Call Analytics</h1>
-            <p className="text-blue-100 mt-1">Interactive visualization dashboard</p>
+            <h1 className="text-2xl md:text-3xl font-bold">State Life</h1>
+            <p className="text-blue-100 mt-1">Insurance Call Analytics</p>
           </div>
         </div>
         <div className="hidden md:block bg-white/20 backdrop-blur-sm px-4 py-2 rounded-lg">
