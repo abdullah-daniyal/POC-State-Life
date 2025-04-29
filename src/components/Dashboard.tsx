@@ -2,15 +2,16 @@ import React, { useEffect, useState } from 'react';
 import Header from './Header';
 import DataSummary from './DataSummary';
 import InsuranceDistribution from './charts/InsuranceDistribution';
-import InsuranceByGender from './charts/InsuranceByGender';
 import CallsTimeOfDay from './charts/CallsTimeOfDay';
 import CallTrends from './charts/CallTrends';
-import InsuranceByTimeOfDay from './charts/InsuranceByTimeOfDay';
+import ZoneDistribution from './charts/ZoneDistribution';
+import QueryStatusDistribution from './charts/QueryStatusDistribution';
 import { 
   parseCSVData,
   getInsuranceDistribution,
-  getInsuranceByGender,
-  getTimeOfDayDistribution
+  getTimeOfDayDistribution,
+  getZoneStatusDistribution,
+  getStatusDistribution
 } from '../utils/dataProcessing';
 import { InsuranceCall } from '../types';
 
@@ -46,11 +47,17 @@ const Dashboard: React.FC = () => {
             'rgba(255, 99, 132, 0.7)',
             'rgba(54, 162, 235, 0.7)',
             'rgba(255, 206, 86, 0.7)',
+            'rgba(75, 192, 192, 0.7)',
+            'rgba(153, 102, 255, 0.7)',
+            'rgba(255, 159, 64, 0.7)',
           ],
           borderColor: [
             'rgba(255, 99, 132, 1)',
             'rgba(54, 162, 235, 1)',
             'rgba(255, 206, 86, 1)',
+            'rgba(75, 192, 192, 1)',
+            'rgba(153, 102, 255, 1)',
+            'rgba(255, 159, 64, 1)',
           ],
           borderWidth: 1,
         },
@@ -58,13 +65,36 @@ const Dashboard: React.FC = () => {
     };
   }, [data]);
   
-  const { distribution, insuranceTypes, genders } = React.useMemo(() => 
-    data.length ? getInsuranceByGender(data) : { distribution: {}, insuranceTypes: [], genders: [] }
-  , [data]);
-  
   const timeOfDayData = React.useMemo(() => 
     data.length ? getTimeOfDayDistribution(data) : null
   , [data]);
+
+  const zoneData = React.useMemo(() => 
+    data.length ? getZoneStatusDistribution(data) : null
+  , [data]);
+
+  const statusDistribution = React.useMemo(() => {
+    if (!data.length) return null;
+    const { labels, data: counts } = getStatusDistribution(data);
+    return {
+      labels,
+      datasets: [
+        {
+          label: 'Status',
+          data: counts,
+          backgroundColor: [
+            'rgba(75, 192, 192, 0.7)',
+            'rgba(255, 99, 132, 0.7)',
+          ],
+          borderColor: [
+            'rgba(75, 192, 192, 1)',
+            'rgba(255, 99, 132, 1)',
+          ],
+          borderWidth: 1,
+        },
+      ],
+    };
+  }, [data]);
 
   if (loading) {
     return (
@@ -89,15 +119,11 @@ const Dashboard: React.FC = () => {
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             <CallTrends data={data} />
-            <InsuranceByTimeOfDay data={data} />
+            {statusDistribution && <QueryStatusDistribution chartData={statusDistribution} />}
           </div>
           
           <div className="grid grid-cols-1 gap-6 mb-6">
-            <InsuranceByGender 
-              insuranceTypes={insuranceTypes}
-              genders={genders}
-              distribution={distribution}
-            />
+            {zoneData && <ZoneDistribution zoneData={zoneData} />}
           </div>
         </div>
         

@@ -1,9 +1,11 @@
 export interface InsuranceCall {
   name: string;
   dateTime: string;
+  phoneNumber: string;
   insurance: string;
-  personId: string;
-  gender: string;
+  policyNo: string;
+  zone: string;
+  status: string;
 }
 
 export interface ChartData {
@@ -22,4 +24,12 @@ export interface TimeOfDayData {
   Afternoon: number;
   Evening: number;
   Night: number;
+}
+
+export interface ZoneData {
+  [key: string]: {
+    total: number;
+    closed: number;
+    referred: number;
+  };
 }

@@ -1,4 +1,4 @@
-import { InsuranceCall, TimeOfDayData } from '../types';
+import { InsuranceCall, TimeOfDayData, ZoneData } from '../types';
 
 export const parseCSVData = async (): Promise<InsuranceCall[]> => {
   const response = await fetch('/data/insurance_calls.csv');
@@ -11,9 +11,11 @@ export const parseCSVData = async (): Promise<InsuranceCall[]> => {
     return {
       name: values[0],
       dateTime: values[1],
-      insurance: values[2],
-      personId: values[3],
-      gender: values[4]
+      phoneNumber: values[2],
+      insurance: values[3],
+      policyNo: values[4],
+      zone: values[5],
+      status: values[6]
     };
   });
 };
@@ -31,25 +33,27 @@ export const getInsuranceDistribution = (data: InsuranceCall[]) => {
   };
 };
 
-export const getInsuranceByGender = (data: InsuranceCall[]) => {
-  const distribution: Record<string, Record<string, number>> = {};
-  
-  const genders = ["Male", "Female", "Other"];
-  const insuranceTypes = [...new Set(data.map(call => call.insurance))];
-  
-  insuranceTypes.forEach(insurance => {
-    distribution[insurance] = {};
-    genders.forEach(gender => {
-      distribution[insurance][gender] = 0;
-    });
-  });
+export const getZoneStatusDistribution = (data: InsuranceCall[]): ZoneData => {
+  const distribution: ZoneData = {};
   
   data.forEach(call => {
-    distribution[call.insurance][call.gender] = 
-      (distribution[call.insurance][call.gender] || 0) + 1;
+    if (!distribution[call.zone]) {
+      distribution[call.zone] = {
+        total: 0,
+        closed: 0,
+        referred: 0
+      };
+    }
+    
+    distribution[call.zone].total += 1;
+    if (call.status === 'Query_Closed') {
+      distribution[call.zone].closed += 1;
+    } else if (call.status === 'Query_Referred') {
+      distribution[call.zone].referred += 1;
+    }
   });
   
-  return { distribution, insuranceTypes, genders };
+  return distribution;
 };
 
 export const getTimeOfDayDistribution = (data: InsuranceCall[]): TimeOfDayData => {
@@ -76,4 +80,20 @@ export const getTimeOfDayDistribution = (data: InsuranceCall[]): TimeOfDayData =
   });
   
   return distribution;
+};
+
+export const getStatusDistribution = (data: InsuranceCall[]) => {
+  const distribution: Record<string, number> = {
+    'Query_Closed': 0,
+    'Query_Referred': 0
+  };
+  
+  data.forEach(call => {
+    distribution[call.status] = (distribution[call.status] || 0) + 1;
+  });
+  
+  return {
+    labels: Object.keys(distribution),
+    data: Object.values(distribution)
+  };
 };
