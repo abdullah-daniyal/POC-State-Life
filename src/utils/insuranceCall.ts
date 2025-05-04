@@ -1,4 +1,4 @@
-Date and Time of call,phone_number,Nature of Complaints,PolicyNo,Zone,Status
+export const csvData = `Date and Time of call,phone_number,Nature of Complaints,PolicyNo,Zone,Status
 12/01/2025-08:23,0347-6543220,Policy Status,23eb4fff-bb5d-4409-8063-fbf9bcedda2b,Islamabad,Query_Referred
 28/02/2025-19:55,0347-6543210,Surrender Status,3ae2e5fc-dd9c-4186-b1f7-dd822901882d,Abbottabad,Query_Referred
 05/03/2025-14:10,0301-1234567,Death Claim Status,abf2d8ba-e4a1-424e-b6a4-b72cdaec7f6a,Karachi (Central),Query_Closed
@@ -14,4 +14,4 @@ Date and Time of call,phone_number,Nature of Complaints,PolicyNo,Zone,Status
 17/01/2025-20:00,0310-3456789,Policy Status,2b279bcc-df0e-9123-b77e-0fb996783821,Gilgit,Query_Closed
 25/02/2025-04:22,0302-9988776,Others,f3eb6590-74fc-4d7f-860a-9791312ec4d3,Shaheed Benazirabad,Query_Referred
 08/03/2025-10:48,0323-5678901,Maturity Claim,e60c2b68-9a0c-4998-93e7-8120e9bedb0d,Islamabad,Query_Referred
-08/01/2025-00:00,0335-1112223,Death Claim Status,e70c2b68-9a0c-4999-93e7-8120e9bedb0d,Karachi (Eastern),Query_Referred
+08/01/2025-00:00,0335-1112223,Death Claim Status,e70c2b68-9a0c-4999-93e7-8120e9bedb0d,Karachi (Eastern),Query_Referred`
