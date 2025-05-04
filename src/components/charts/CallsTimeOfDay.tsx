@@ -15,7 +15,7 @@ const CallsTimeOfDay: React.FC<CallsTimeOfDayProps> = ({ timeOfDayData }) => {
     return (
       <div className="bg-white rounded-xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl">
         <h2 className="text-2xl font-bold text-gray-800 mb-4">Calls by Time of Day</h2>
-        <div className="w-full h-64 md:h-72 flex items-center justify-center">
+        <div className="w-full h-[300px] flex items-center justify-center">
           <p className="text-gray-500">No time of day data available</p>
         </div>
       </div>
@@ -55,7 +55,7 @@ const CallsTimeOfDay: React.FC<CallsTimeOfDayProps> = ({ timeOfDayData }) => {
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl">
       <h2 className="text-2xl font-bold text-gray-800 mb-4">Calls by Time of Day</h2>
-      <div className="w-full h-64 md:h-72">
+      <div className="w-full h-[300px]">
         <Doughnut
           data={chartData}
           options={{
@@ -64,11 +64,17 @@ const CallsTimeOfDay: React.FC<CallsTimeOfDayProps> = ({ timeOfDayData }) => {
             plugins: {
               legend: {
                 position: "bottom",
+                align: "start",
                 labels: {
+                  boxWidth: 15,
+                  boxHeight: 15,
+                  padding: 15,
                   font: {
-                    size: 14,
+                    size: 12,
+                    weight: "bold",
                   },
-                  padding: 20,
+                  usePointStyle: true,
+                  pointStyle: "circle",
                 },
               },
               tooltip: {
@@ -81,6 +87,14 @@ const CallsTimeOfDay: React.FC<CallsTimeOfDayProps> = ({ timeOfDayData }) => {
                     return `${label}: ${value} calls (${percentage}%)`
                   },
                 },
+              },
+            },
+            layout: {
+              padding: {
+                top: 10,
+                bottom: 10,
+                left: 10,
+                right: 10,
               },
             },
             cutout: "60%",

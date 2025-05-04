@@ -15,7 +15,7 @@ const QueryStatusDistribution: React.FC<QueryStatusDistributionProps> = ({ chart
     return (
       <div className="bg-white rounded-xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl">
         <h2 className="text-2xl font-bold text-gray-800 mb-4">Query Status Distribution</h2>
-        <div className="w-full h-64 md:h-72 flex items-center justify-center">
+        <div className="w-full h-[300px] flex items-center justify-center">
           <p className="text-gray-500">No query status data available</p>
         </div>
       </div>
@@ -44,7 +44,7 @@ const QueryStatusDistribution: React.FC<QueryStatusDistributionProps> = ({ chart
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl">
       <h2 className="text-2xl font-bold text-gray-800 mb-4">Query Status Distribution</h2>
-      <div className="w-full h-64 md:h-72">
+      <div className="w-full h-[300px]">
         <Pie
           data={uniqueChartData}
           options={{
@@ -53,11 +53,17 @@ const QueryStatusDistribution: React.FC<QueryStatusDistributionProps> = ({ chart
             plugins: {
               legend: {
                 position: "bottom",
+                align: "start",
                 labels: {
+                  boxWidth: 15,
+                  boxHeight: 15,
+                  padding: 15,
                   font: {
-                    size: 14,
+                    size: 12,
+                    weight: "bold",
                   },
-                  padding: 20,
+                  usePointStyle: true,
+                  pointStyle: "circle",
                 },
               },
               tooltip: {
@@ -70,6 +76,14 @@ const QueryStatusDistribution: React.FC<QueryStatusDistributionProps> = ({ chart
                     return `${label}: ${value} (${percentage}%)`
                   },
                 },
+              },
+            },
+            layout: {
+              padding: {
+                top: 10,
+                bottom: 10,
+                left: 10,
+                right: 10,
               },
             },
             animation: {

@@ -17,7 +17,7 @@ const SimplifiedTimeDistribution: React.FC<SimplifiedTimeDistributionProps> = ({
     return (
       <div className="bg-white rounded-xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl">
         <h2 className="text-2xl font-bold text-gray-800 mb-4">Call Distribution by Time</h2>
-        <div className="w-full h-64 md:h-72 flex items-center justify-center">
+        <div className="w-full h-[300px] flex items-center justify-center">
           <p className="text-gray-500">No time distribution data available</p>
         </div>
       </div>
@@ -51,7 +51,7 @@ const SimplifiedTimeDistribution: React.FC<SimplifiedTimeDistributionProps> = ({
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl">
       <h2 className="text-2xl font-bold text-gray-800 mb-4">Call Distribution by Time</h2>
-      <div className="w-full h-64 md:h-72">
+      <div className="w-full h-[300px]">
         <Doughnut
           data={chartData}
           options={{
@@ -60,11 +60,17 @@ const SimplifiedTimeDistribution: React.FC<SimplifiedTimeDistributionProps> = ({
             plugins: {
               legend: {
                 position: "bottom",
+                align: "start",
                 labels: {
+                  boxWidth: 15,
+                  boxHeight: 15,
+                  padding: 15,
                   font: {
-                    size: 14,
+                    size: 12,
+                    weight: "bold",
                   },
-                  padding: 20,
+                  usePointStyle: true,
+                  pointStyle: "circle",
                 },
               },
               tooltip: {
@@ -76,6 +82,14 @@ const SimplifiedTimeDistribution: React.FC<SimplifiedTimeDistributionProps> = ({
                     return `${label}: ${value} calls (${percentage}%)`
                   },
                 },
+              },
+            },
+            layout: {
+              padding: {
+                top: 10,
+                bottom: 10,
+                left: 10,
+                right: 10,
               },
             },
             cutout: "60%",
@@ -91,14 +105,14 @@ const SimplifiedTimeDistribution: React.FC<SimplifiedTimeDistributionProps> = ({
       {/* Add a summary below the chart */}
       <div className="mt-4 grid grid-cols-2 gap-4">
         <div className="bg-blue-50 p-3 rounded-lg">
-          <div className="text-blue-800 font-medium">Morning</div>
-          <div className="text-2xl font-bold">{timeData.Morning}</div>
-          <div className="text-sm text-blue-600">{morningPercentage}% of calls</div>
+          <div className="text-blue-800 font-medium text-sm md:text-base">Morning</div>
+          <div className="text-xl md:text-2xl font-bold">{timeData.Morning}</div>
+          <div className="text-xs md:text-sm text-blue-600">{morningPercentage}% of calls</div>
         </div>
         <div className="bg-purple-50 p-3 rounded-lg">
-          <div className="text-purple-800 font-medium">Evening</div>
-          <div className="text-2xl font-bold">{timeData.Evening}</div>
-          <div className="text-sm text-purple-600">{eveningPercentage}% of calls</div>
+          <div className="text-purple-800 font-medium text-sm md:text-base">Evening</div>
+          <div className="text-xl md:text-2xl font-bold">{timeData.Evening}</div>
+          <div className="text-xs md:text-sm text-purple-600">{eveningPercentage}% of calls</div>
         </div>
       </div>
     </div>

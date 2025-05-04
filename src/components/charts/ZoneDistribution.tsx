@@ -15,7 +15,7 @@ const ZoneDistribution: React.FC<ZoneDistributionProps> = ({ zoneData }) => {
     return (
       <div className="bg-white rounded-xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl">
         <h2 className="text-2xl font-bold text-gray-800 mb-4">Query Status by Zone</h2>
-        <div className="w-full h-64 md:h-72 flex items-center justify-center">
+        <div className="w-full h-[300px] md:h-[400px] flex items-center justify-center">
           <p className="text-gray-500">No zone data available</p>
         </div>
       </div>
@@ -50,9 +50,7 @@ const ZoneDistribution: React.FC<ZoneDistributionProps> = ({ zoneData }) => {
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl">
       <h2 className="text-2xl font-bold text-gray-800 mb-4">Query Status by Zone</h2>
-      <div className="w-full h-64 md:h-96">
-        {" "}
-        {/* Increased height for better visibility with many zones */}
+      <div className="w-full h-[300px] md:h-[400px]">
         <Bar
           data={data}
           options={{
@@ -62,11 +60,25 @@ const ZoneDistribution: React.FC<ZoneDistributionProps> = ({ zoneData }) => {
             plugins: {
               legend: {
                 position: "bottom",
+                align: "start",
                 labels: {
+                  boxWidth: 15,
+                  boxHeight: 15,
+                  padding: 15,
                   font: {
-                    size: 14,
+                    size: 12,
+                    weight: "bold",
                   },
-                  padding: 20,
+                  usePointStyle: true,
+                  pointStyle: "circle",
+                },
+              },
+              tooltip: {
+                titleFont: {
+                  size: 14,
+                },
+                bodyFont: {
+                  size: 12,
                 },
               },
             },
@@ -76,10 +88,27 @@ const ZoneDistribution: React.FC<ZoneDistributionProps> = ({ zoneData }) => {
                 beginAtZero: true,
                 ticks: {
                   precision: 0,
+                  font: {
+                    size: 12,
+                  },
                 },
               },
               y: {
                 stacked: true,
+                ticks: {
+                  font: {
+                    size: 11,
+                    weight: "bold",
+                  },
+                },
+              },
+            },
+            layout: {
+              padding: {
+                top: 10,
+                bottom: 30, // Extra padding at bottom for legend
+                left: 10,
+                right: 10,
               },
             },
             animation: {

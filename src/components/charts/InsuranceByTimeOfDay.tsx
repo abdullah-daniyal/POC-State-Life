@@ -15,7 +15,7 @@ const InsuranceByTimeOfDay: React.FC<InsuranceByTimeOfDayProps> = ({ data }) => 
     return (
       <div className="bg-white rounded-xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl">
         <h2 className="text-2xl font-bold text-gray-800 mb-4">Complaint Types by Time of Day</h2>
-        <div className="w-full h-64 md:h-72 flex items-center justify-center">
+        <div className="w-full h-[300px] md:h-[350px] flex items-center justify-center">
           <p className="text-gray-500">No complaint type data available</p>
         </div>
       </div>
@@ -56,6 +56,8 @@ const InsuranceByTimeOfDay: React.FC<InsuranceByTimeOfDayProps> = ({ data }) => 
     "rgba(75, 192, 192, 0.8)",
     "rgba(153, 102, 255, 0.8)",
     "rgba(255, 159, 64, 0.8)",
+    "rgba(29, 209, 161, 0.8)",
+    "rgba(238, 90, 36, 0.8)",
   ]
 
   const borderColors = [
@@ -65,6 +67,8 @@ const InsuranceByTimeOfDay: React.FC<InsuranceByTimeOfDayProps> = ({ data }) => 
     "rgba(75, 192, 192, 1)",
     "rgba(153, 102, 255, 1)",
     "rgba(255, 159, 64, 1)",
+    "rgba(29, 209, 161, 1)",
+    "rgba(238, 90, 36, 1)",
   ]
 
   const datasets = complaintTypes.map((complaint, index) => ({
@@ -83,7 +87,7 @@ const InsuranceByTimeOfDay: React.FC<InsuranceByTimeOfDayProps> = ({ data }) => 
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl">
       <h2 className="text-2xl font-bold text-gray-800 mb-4">Complaint Types by Time of Day</h2>
-      <div className="w-full h-64 md:h-72">
+      <div className="w-full h-[300px] md:h-[350px]">
         <Bar
           data={chartData}
           options={{
@@ -92,24 +96,54 @@ const InsuranceByTimeOfDay: React.FC<InsuranceByTimeOfDayProps> = ({ data }) => 
             plugins: {
               legend: {
                 position: "bottom",
+                align: "start",
                 labels: {
+                  boxWidth: 15,
+                  boxHeight: 15,
+                  padding: 15,
                   font: {
-                    size: 14,
+                    size: 12,
+                    weight: "bold",
                   },
-                  padding: 20,
+                  usePointStyle: true,
+                  pointStyle: "circle",
+                },
+              },
+              tooltip: {
+                titleFont: {
+                  size: 14,
+                },
+                bodyFont: {
+                  size: 12,
                 },
               },
             },
             scales: {
               x: {
                 stacked: true,
+                ticks: {
+                  font: {
+                    size: 12,
+                  },
+                },
               },
               y: {
                 stacked: true,
                 beginAtZero: true,
                 ticks: {
                   precision: 0,
+                  font: {
+                    size: 12,
+                  },
                 },
+              },
+            },
+            layout: {
+              padding: {
+                top: 10,
+                bottom: 10,
+                left: 10,
+                right: 10,
               },
             },
             animation: {

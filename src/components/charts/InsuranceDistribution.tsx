@@ -15,7 +15,7 @@ const InsuranceDistribution: React.FC<InsuranceDistributionProps> = ({ chartData
     return (
       <div className="bg-white rounded-xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl">
         <h2 className="text-2xl font-bold text-gray-800 mb-4">Complaint Type Distribution</h2>
-        <div className="w-full h-64 md:h-72 flex items-center justify-center">
+        <div className="w-full h-[300px] md:h-[350px] flex items-center justify-center">
           <p className="text-gray-500">No complaint data available</p>
         </div>
       </div>
@@ -25,7 +25,7 @@ const InsuranceDistribution: React.FC<InsuranceDistributionProps> = ({ chartData
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl">
       <h2 className="text-2xl font-bold text-gray-800 mb-4">Complaint Type Distribution</h2>
-      <div className="w-full h-64 md:h-72">
+      <div className="w-full h-[300px] md:h-[350px]">
         <Pie
           data={chartData}
           options={{
@@ -34,12 +34,16 @@ const InsuranceDistribution: React.FC<InsuranceDistributionProps> = ({ chartData
             plugins: {
               legend: {
                 position: "bottom",
+                align: "start",
                 labels: {
+                  boxWidth: 15,
+                  boxHeight: 15,
+                  padding: 15,
                   font: {
-                    size: 14,
+                    size: 12,
+                    weight: "bold",
                   },
-                  padding: 20,
-                  usePointStyle: true, // Use point style for better distinction
+                  usePointStyle: true,
                   pointStyle: "circle",
                 },
               },
@@ -53,6 +57,14 @@ const InsuranceDistribution: React.FC<InsuranceDistributionProps> = ({ chartData
                     return `${label}: ${value} (${percentage}%)`
                   },
                 },
+              },
+            },
+            layout: {
+              padding: {
+                top: 10,
+                bottom: 10,
+                left: 10,
+                right: 10,
               },
             },
             animation: {
