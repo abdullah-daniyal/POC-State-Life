@@ -4,13 +4,9 @@ import { csvData } from "../data/insuranceCalls"
 // Function to fetch data from Google Sheets
 export const parseCSVData = async (): Promise<InsuranceCall[]> => {
   try {
-    // Google Sheets ID from the URL
-    // const sheetId = "1Sg7UHLUJmufu4vbixurVCAFqkDOF0J4nf0KeNHL-JDI"
-
     // Fetch the sheet as CSV
-    // Note: This requires the sheet to be published to the web as CSV
     const response = await fetch(
-      `https://docs.google.com/spreadsheets/d/e/2PACX-1vSDm7dw5fVfXXoppmPUfLZiOpoovL-sDDJtZL4xQyGVFk8wEdwAXdPvFIhvEY_5xAkqsqWOfV39NpFa/pub?gid=171725172&single=true&output=csv`,
+      `https://docs.google.com/spreadsheets/d/e/2PACX-1vQOUJvjJQe0qxRhYvRiXBGM9UwUE73Mpl-o7W0xdrZPxHA960-wZtgZg3LKLQPr7qchONmBboJhKz6Z/pub?gid=171725172&single=true&output=csv`,
     )
 
     if (!response.ok) {
@@ -19,6 +15,33 @@ export const parseCSVData = async (): Promise<InsuranceCall[]> => {
 
     const csvText = await response.text()
     const lines = csvText.split("\n")
+
+    if (lines.length === 0) {
+      throw new Error("CSV data is empty")
+    }
+
+    // Get the header row to map column indices
+    const headerRow = parseCSVLine(lines[0])
+
+    // Map column names to indices
+    const columnMap = {
+      dateTime: headerRow.findIndex((col) => col.trim().toLowerCase() === "datetime"),
+      phoneNumber: headerRow.findIndex((col) => col.trim().toLowerCase() === "phonenumber"),
+      insurance: headerRow.findIndex((col) => col.trim().toLowerCase() === "natureofcall"),
+      policyNo: headerRow.findIndex((col) => col.trim().toLowerCase() === "policyno"),
+      zone: headerRow.findIndex((col) => col.trim().toLowerCase() === "zone"),
+      status: headerRow.findIndex((col) => col.trim().toLowerCase() === "status"),
+    }
+
+    // Validate that all required columns exist
+    const missingColumns = Object.entries(columnMap)
+      .filter(([_, index]) => index === -1)
+      .map(([key]) => key)
+
+    if (missingColumns.length > 0) {
+      console.error("Missing columns in CSV:", missingColumns)
+      throw new Error(`Missing required columns: ${missingColumns.join(", ")}`)
+    }
 
     // Skip the header row
     return lines
@@ -30,27 +53,30 @@ export const parseCSVData = async (): Promise<InsuranceCall[]> => {
 
         if (values.length < 6) return null // Skip incomplete rows
 
-        // Parse the date and time
-        const dateTimeStr = values[0]
+        // Parse the date and time - FORMAT: "13-Dec-26 13:56"
+        const dateTimeStr = values[columnMap.dateTime]
         let formattedDateTime = dateTimeStr
 
-        // Handle different date formats
-        if (dateTimeStr.includes("-")) {
-          const [datePart, timePart] = dateTimeStr.split("-")
-          if (datePart.includes("/")) {
-            const [day, month, year] = datePart.split("/")
-            // Format as ISO date string for proper Date parsing
-            formattedDateTime = `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}T${timePart || "00:00"}:00`
+        try {
+          // Handle the format "13-Dec-26 13:56"
+          if (dateTimeStr.includes("-") && dateTimeStr.includes(" ")) {
+            const date = new Date(dateTimeStr)
+            if (!isNaN(date.getTime())) {
+              formattedDateTime = date.toISOString()
+            }
           }
+        } catch (error) {
+          console.error("Error parsing date:", dateTimeStr, error)
+          // Keep the original string if parsing fails
         }
 
         return {
           dateTime: formattedDateTime,
-          phoneNumber: values[1],
-          insurance: values[2], // Nature of Complaints
-          policyNo: values[3],
-          zone: values[4],
-          status: values[5],
+          phoneNumber: values[columnMap.phoneNumber],
+          insurance: values[columnMap.insurance], // NatureOfCall
+          policyNo: values[columnMap.policyNo],
+          zone: values[columnMap.zone],
+          status: values[columnMap.status],
         }
       })
       .filter((item): item is InsuranceCall => item !== null)
@@ -85,10 +111,46 @@ function parseCSVLine(line: string): string[] {
   return result
 }
 
-// Fallback function using hardcoded data
+// Update the fallbackParseCSVData function to use the same column mapping approach
 const fallbackParseCSVData = (): InsuranceCall[] => {
-  // Your existing hardcoded data parsing logic
   const lines = csvData.split("\n")
+
+  if (lines.length === 0) {
+    return []
+  }
+
+  // Get the header row to map column indices
+  const headerRow = parseCSVLine(lines[0])
+
+  // Map column names to indices
+  const columnMap = {
+    dateTime: headerRow.findIndex((col) => col.trim().toLowerCase() === "datetime"),
+    phoneNumber: headerRow.findIndex((col) => col.trim().toLowerCase() === "phonenumber"),
+    insurance: headerRow.findIndex((col) => col.trim().toLowerCase() === "natureofcall"),
+    policyNo: headerRow.findIndex((col) => col.trim().toLowerCase() === "policyno"),
+    zone: headerRow.findIndex((col) => col.trim().toLowerCase() === "zone"),
+    status: headerRow.findIndex((col) => col.trim().toLowerCase() === "status"),
+  }
+
+  // If headers aren't found, use default indices
+  const defaultColumnMap = {
+    dateTime: 0,
+    phoneNumber: 1,
+    insurance: 2,
+    policyNo: 3,
+    zone: 4,
+    status: 5,
+  }
+
+  // Use the mapped indices if found, otherwise use defaults
+  const finalColumnMap = {
+    dateTime: columnMap.dateTime !== -1 ? columnMap.dateTime : defaultColumnMap.dateTime,
+    phoneNumber: columnMap.phoneNumber !== -1 ? columnMap.phoneNumber : defaultColumnMap.phoneNumber,
+    insurance: columnMap.insurance !== -1 ? columnMap.insurance : defaultColumnMap.insurance,
+    policyNo: columnMap.policyNo !== -1 ? columnMap.policyNo : defaultColumnMap.policyNo,
+    zone: columnMap.zone !== -1 ? columnMap.zone : defaultColumnMap.zone,
+    status: columnMap.status !== -1 ? columnMap.status : defaultColumnMap.status,
+  }
 
   return lines
     .slice(1)
@@ -98,27 +160,30 @@ const fallbackParseCSVData = (): InsuranceCall[] => {
 
       if (values.length < 6) return null // Skip incomplete rows
 
-      // Parse the date and time
-      const dateTimeStr = values[0]
+      // Parse the date and time - FORMAT: "13-Dec-26 13:56"
+      const dateTimeStr = values[finalColumnMap.dateTime]
       let formattedDateTime = dateTimeStr
 
-      // Handle different date formats
-      if (dateTimeStr.includes("-")) {
-        const [datePart, timePart] = dateTimeStr.split("-")
-        if (datePart.includes("/")) {
-          const [day, month, year] = datePart.split("/")
-          // Format as ISO date string for proper Date parsing
-          formattedDateTime = `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}T${timePart || "00:00"}:00`
+      try {
+        // Handle the format "13-Dec-26 13:56"
+        if (dateTimeStr.includes("-") && dateTimeStr.includes(" ")) {
+          const date = new Date(dateTimeStr)
+          if (!isNaN(date.getTime())) {
+            formattedDateTime = date.toISOString()
+          }
         }
+      } catch (error) {
+        console.error("Error parsing date:", dateTimeStr, error)
+        // Keep the original string if parsing fails
       }
 
       return {
         dateTime: formattedDateTime,
-        phoneNumber: values[1],
-        insurance: values[2], // Nature of Complaints
-        policyNo: values[3],
-        zone: values[4],
-        status: values[5],
+        phoneNumber: values[finalColumnMap.phoneNumber],
+        insurance: values[finalColumnMap.insurance], // NatureOfCall
+        policyNo: values[finalColumnMap.policyNo],
+        zone: values[finalColumnMap.zone],
+        status: values[finalColumnMap.status],
       }
     })
     .filter((item): item is InsuranceCall => item !== null)
@@ -216,23 +281,23 @@ export const getTimeOfDayDistribution = (data: InsuranceCall[]): TimeOfDayData =
   return distribution
 }
 
-// New function for simplified time distribution (Morning: 8 AM - 4:59 PM, Evening: 5 PM - 12 AM)
+// Update the getSimplifiedTimeDistribution function with new time ranges
 export const getSimplifiedTimeDistribution = (data: InsuranceCall[]): SimplifiedTimeData => {
   const distribution: SimplifiedTimeData = {
-    Morning: 0, // 8 AM - 4:59 PM
-    Evening: 0, // 5 PM - 12 AM
+    Morning: 0, // 08:00 - 15:59
+    Evening: 0, // 16:00 - 00:00
   }
 
   data.forEach((call) => {
     const date = new Date(call.dateTime)
     const hour = date.getHours()
 
-    if (hour >= 8 && hour < 17) {
+    if (hour >= 8 && hour < 16) {
       distribution.Morning += 1
-    } else if ((hour >= 17 && hour <= 23) || hour === 0) {
+    } else if (hour >= 16 && hour <= 23) {
       distribution.Evening += 1
     }
-    // Note: Calls between 12 AM - 8 AM are not counted in this distribution
+    // Note: Calls between 00:01 - 07:59 are not counted in this distribution
   })
 
   return distribution

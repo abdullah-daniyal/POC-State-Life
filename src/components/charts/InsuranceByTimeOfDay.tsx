@@ -9,6 +9,7 @@ interface InsuranceByTimeOfDayProps {
   data: InsuranceCall[]
 }
 
+// Update the InsuranceByTimeOfDay component to use only Morning and Evening time slots
 const InsuranceByTimeOfDay: React.FC<InsuranceByTimeOfDayProps> = ({ data }) => {
   // Check if data is null or undefined
   if (!data || data.length === 0) {
@@ -22,30 +23,33 @@ const InsuranceByTimeOfDay: React.FC<InsuranceByTimeOfDayProps> = ({ data }) => 
     )
   }
 
-  const timeSlots = ["Morning", "Afternoon", "Evening", "Night"]
+  // Updated to use only Morning and Evening
+  const timeSlots = ["Morning", "Evening"]
   const complaintTypes = [...new Set(data.map((call) => call.insurance))]
 
+  // Updated time of day function to match the new requirements
   const getTimeOfDay = (hour: number): string => {
-    if (hour >= 5 && hour < 12) return "Morning"
-    if (hour >= 12 && hour < 17) return "Afternoon"
-    if (hour >= 17 && hour < 21) return "Evening"
-    return "Night"
+    if (hour >= 8 && hour < 16) return "Morning" // 08:00 - 15:59
+    return "Evening" // 16:00 - 00:00
   }
 
   const distribution: Record<string, Record<string, number>> = {}
   complaintTypes.forEach((complaint) => {
     distribution[complaint] = {
       Morning: 0,
-      Afternoon: 0,
       Evening: 0,
-      Night: 0,
     }
   })
 
   data.forEach((call) => {
-    const hour = new Date(call.dateTime).getHours()
-    const timeSlot = getTimeOfDay(hour)
-    distribution[call.insurance][timeSlot]++
+    const date = new Date(call.dateTime)
+    const hour = date.getHours()
+
+    // Only count calls between 8:00 and 00:00
+    if (hour >= 8 && hour <= 23) {
+      const timeSlot = getTimeOfDay(hour)
+      distribution[call.insurance][timeSlot]++
+    }
   })
 
   // Generate colors for each complaint type
@@ -87,6 +91,15 @@ const InsuranceByTimeOfDay: React.FC<InsuranceByTimeOfDayProps> = ({ data }) => 
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl">
       <h2 className="text-2xl font-bold text-gray-800 mb-4">Complaint Types by Time of Day</h2>
+
+      {/* Add a note about the time slots */}
+      <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+        <div className="text-sm text-gray-600">
+          <span className="font-medium">Morning:</span> 08:00 - 15:59 |
+          <span className="font-medium ml-2">Evening:</span> 16:00 - 00:00
+        </div>
+      </div>
+
       <div className="w-full h-[300px] md:h-[350px]">
         <Bar
           data={chartData}

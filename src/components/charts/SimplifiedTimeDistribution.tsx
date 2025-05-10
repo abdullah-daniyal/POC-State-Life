@@ -24,7 +24,7 @@ const SimplifiedTimeDistribution: React.FC<SimplifiedTimeDistributionProps> = ({
     )
   }
 
-  const labels = ["Morning (8 AM - 4:59 PM)", "Evening (5 PM - 12 AM)"]
+  const labels = ["Morning (08:00 - 15:59)", "Evening (16:00 - 00:00)"]
   const data = [timeData.Morning, timeData.Evening]
   const total = data.reduce((a, b) => a + b, 0)
 
@@ -51,6 +51,23 @@ const SimplifiedTimeDistribution: React.FC<SimplifiedTimeDistributionProps> = ({
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl">
       <h2 className="text-2xl font-bold text-gray-800 mb-4">Call Distribution by Time</h2>
+
+      {/* Add a flowchart showing the time division */}
+      <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+        <div className="text-sm text-gray-600 mb-2 font-medium">Shift Division:</div>
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-2">
+          <div className="flex-1 bg-blue-50 p-2 rounded-md border border-blue-100 text-center">
+            <div className="text-blue-800 font-medium">Morning Shift</div>
+            <div className="text-blue-600">08:00 - 15:59</div>
+          </div>
+          <div className="hidden sm:block text-gray-400">→</div>
+          <div className="flex-1 bg-purple-50 p-2 rounded-md border border-purple-100 text-center">
+            <div className="text-purple-800 font-medium">Evening Shift</div>
+            <div className="text-purple-600">16:00 - 00:00</div>
+          </div>
+        </div>
+      </div>
+
       <div className="w-full h-[300px]">
         <Doughnut
           data={chartData}

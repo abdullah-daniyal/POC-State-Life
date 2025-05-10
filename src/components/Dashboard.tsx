@@ -1,16 +1,16 @@
 "use client"
 
-import React, { useEffect, useState, useCallback } from "react"
+import React, { useEffect, useState, useCallback, useRef } from "react"
 import Header from "./Header"
 import DataSummary from "./DataSummary"
 import InsuranceDistribution from "./charts/InsuranceDistribution"
-import CallsTimeOfDay from "./charts/CallsTimeOfDay"
 import ZoneDistribution from "./charts/ZoneDistribution"
 import QueryStatusDistribution from "./charts/QueryStatusDistribution"
 import InsuranceByTimeOfDay from "./charts/InsuranceByTimeOfDay"
 import SimplifiedTimeDistribution from "./charts/SimplifiedTimeDistribution"
 import RegionCityFilter from "./filters/RegionCityFilter"
 import DateFilter from "./filters/DateFilter"
+import Loader from "./Loader"
 import {
   parseCSVData,
   getTimeOfDayDistribution,
@@ -22,6 +22,9 @@ import {
 import { isToday, isWithinPastDays, getDateRangeText } from "../utils/dateUtils"
 import type { InsuranceCall } from "../types"
 
+// Default auto-refresh interval in milliseconds (5 minutes)
+const DEFAULT_REFRESH_INTERVAL = 5 * 60 * 1000
+
 const Dashboard: React.FC = () => {
   const [data, setData] = useState<InsuranceCall[]>([])
   const [filteredData, setFilteredData] = useState<InsuranceCall[]>([])
@@ -29,37 +32,21 @@ const Dashboard: React.FC = () => {
   const [dateFilter, setDateFilter] = useState<"today" | "past30days" | "all">("all") // Changed default to "all"
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null)
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true)
-        setError(null)
-        const result = await parseCSVData()
+  // Auto-refresh state
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true)
+  const [refreshInterval, setRefreshInterval] = useState(DEFAULT_REFRESH_INTERVAL)
+  const [nextRefreshIn, setNextRefreshIn] = useState(refreshInterval)
+  const intervalRef = useRef<NodeJS.Timeout | null>(null)
+  const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
-        if (result.length === 0) {
-          throw new Error("No data returned from the source")
-        }
-
-        setData(result)
-
-        // Apply initial filter (all data since we changed the default)
-        setRegionFilteredData(result)
-        setFilteredData(result)
-      } catch (error) {
-        console.error("Error loading data:", error)
-        setError("Failed to load data. Please check if the Google Sheet is published and accessible.")
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchData()
-  }, [])
-
-  // Refresh data function
-  const refreshData = useCallback(async () => {
+  // Fetch data function
+  const fetchData = useCallback(async (showLoading = true) => {
     try {
-      setLoading(true)
+      if (showLoading) {
+        setLoading(true)
+      }
       setError(null)
       const result = await parseCSVData()
 
@@ -68,33 +55,81 @@ const Dashboard: React.FC = () => {
       }
 
       setData(result)
+      setLastRefreshed(new Date())
 
-      // Re-apply current filters
-      let newFilteredData = result
-
-      // Apply date filter
-      if (dateFilter !== "all") {
-        newFilteredData = result.filter((call) => {
-          const callDate = new Date(call.dateTime)
-          if (dateFilter === "today") {
-            return isToday(callDate)
-          } else if (dateFilter === "past30days") {
-            return isWithinPastDays(callDate, 30)
-          }
-          return true
-        })
-      }
-
-      setRegionFilteredData(newFilteredData)
-
-      // The useEffect for date filtering will handle setting filteredData
+      // Apply initial filter (all data since we changed the default)
+      setRegionFilteredData(result)
+      setFilteredData(result)
     } catch (error) {
-      console.error("Error refreshing data:", error)
-      setError("Failed to refresh data. Please check if the Google Sheet is published and accessible.")
+      console.error("Error loading data:", error)
+      setError("Failed to load data. Please check if the Google Sheet is published and accessible.")
     } finally {
-      setLoading(false)
+      if (showLoading) {
+        setLoading(false)
+      }
     }
-  }, [dateFilter])
+  }, [])
+
+  // Initial data load
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
+
+  // Auto-refresh setup
+  useEffect(() => {
+    // Clear any existing intervals
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current)
+      intervalRef.current = null
+    }
+
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current)
+      countdownIntervalRef.current = null
+    }
+
+    // Set up new intervals if auto-refresh is enabled
+    if (autoRefreshEnabled) {
+      // Set up the data refresh interval
+      intervalRef.current = setInterval(() => {
+        fetchData(false) // Don't show loading indicator for auto-refresh
+        setNextRefreshIn(refreshInterval) // Reset countdown
+      }, refreshInterval)
+
+      // Set up countdown timer (updates every second)
+      setNextRefreshIn(refreshInterval)
+      countdownIntervalRef.current = setInterval(() => {
+        setNextRefreshIn((prev) => Math.max(0, prev - 1000))
+      }, 1000)
+    }
+
+    // Cleanup on unmount
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current)
+      if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current)
+    }
+  }, [autoRefreshEnabled, refreshInterval, fetchData])
+
+  // Toggle auto-refresh
+  const toggleAutoRefresh = useCallback(() => {
+    setAutoRefreshEnabled((prev) => !prev)
+  }, [])
+
+  // Change refresh interval
+  const changeRefreshInterval = useCallback((minutes: number) => {
+    const newInterval = minutes * 60 * 1000
+    setRefreshInterval(newInterval)
+    setNextRefreshIn(newInterval)
+  }, [])
+
+  // Manual refresh function
+  const refreshData = useCallback(async () => {
+    await fetchData(true)
+    // Reset the countdown timer after manual refresh
+    if (autoRefreshEnabled) {
+      setNextRefreshIn(refreshInterval)
+    }
+  }, [fetchData, autoRefreshEnabled, refreshInterval])
 
   // Apply date filter to the region-filtered data
   useEffect(() => {
@@ -207,12 +242,19 @@ const Dashboard: React.FC = () => {
     }
   }, [filteredData])
 
+  // Format the countdown timer
+  const formatCountdown = (ms: number) => {
+    if (!autoRefreshEnabled) return "Auto-refresh disabled"
+
+    const seconds = Math.floor((ms / 1000) % 60)
+    const minutes = Math.floor((ms / (1000 * 60)) % 60)
+
+    return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`
+  }
+
+  // Show loader while data is being fetched
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-xl text-gray-600">Loading dashboard data...</div>
-      </div>
-    )
+    return <Loader />
   }
 
   if (error) {
@@ -229,7 +271,17 @@ const Dashboard: React.FC = () => {
               <li>Select "Entire Document" and "CSV" format</li>
               <li>Click "Publish" and confirm</li>
               <li>Make sure the sheet is also shared (viewable by anyone with the link)</li>
+              <li>Check that the URL is correct and the file exists</li>
             </ol>
+          </div>
+          <div className="bg-yellow-50 p-4 rounded-md mb-6 border border-yellow-200">
+            <p className="text-yellow-800 text-sm mb-2">
+              <strong>Note:</strong> The current Google Sheets URL appears to be inaccessible. Please verify the sharing
+              settings and URL.
+            </p>
+            <p className="text-yellow-800 text-sm">
+              <strong>Required column headers:</strong> DateTime, PhoneNumber, NatureOfCall, PolicyNo, Zone, Status
+            </p>
           </div>
           <button
             onClick={refreshData}
@@ -245,7 +297,15 @@ const Dashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
-        <Header onRefresh={refreshData} />
+        <Header
+          onRefresh={refreshData}
+          autoRefreshEnabled={autoRefreshEnabled}
+          onToggleAutoRefresh={toggleAutoRefresh}
+          refreshInterval={refreshInterval / (60 * 1000)} // Convert to minutes
+          onChangeRefreshInterval={changeRefreshInterval}
+          nextRefreshIn={formatCountdown(nextRefreshIn)}
+          lastRefreshed={lastRefreshed}
+        />
 
         <div className="mt-8">
           {/* Date filter */}
@@ -282,9 +342,8 @@ const Dashboard: React.FC = () => {
                 {complaintDistribution && <InsuranceDistribution chartData={complaintDistribution} />}
               </div>
 
-              {/* Calls by Time of Day (half) | Query Status Distribution (half) */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                {timeOfDayData && <CallsTimeOfDay timeOfDayData={timeOfDayData} />}
+              {/* Query Status Distribution (full width) - Removed CallsTimeOfDay */}
+              <div className="grid grid-cols-1 gap-6 mb-6">
                 {statusDistribution && <QueryStatusDistribution chartData={statusDistribution} />}
               </div>
 
