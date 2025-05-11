@@ -1,6 +1,4 @@
-"use client"
-
-import React, { useEffect, useState, useCallback, useRef } from "react"
+import React, { useState, useCallback } from "react"
 import Header from "./Header"
 import DataSummary from "./DataSummary"
 import InsuranceDistribution from "./charts/InsuranceDistribution"
@@ -11,8 +9,8 @@ import SimplifiedTimeDistribution from "./charts/SimplifiedTimeDistribution"
 import RegionCityFilter from "./filters/RegionCityFilter"
 import DateFilter from "./filters/DateFilter"
 import Loader from "./Loader"
+import { useDataRefresh } from "../hooks/useDataRefresh"
 import {
-  parseCSVData,
   getTimeOfDayDistribution,
   getZoneStatusDistribution,
   getStatusDistribution,
@@ -22,117 +20,36 @@ import {
 import { isToday, isWithinPastDays, getDateRangeText } from "../utils/dateUtils"
 import type { InsuranceCall } from "../types"
 
-// Default auto-refresh interval in milliseconds (5 minutes)
-const DEFAULT_REFRESH_INTERVAL = 5 * 60 * 1000
-
 const Dashboard: React.FC = () => {
-  const [data, setData] = useState<InsuranceCall[]>([])
+  const {
+    data,
+    loading,
+    error,
+    lastRefreshed,
+    autoRefreshEnabled,
+    refreshInterval,
+    nextRefreshIn,
+    toggleAutoRefresh,
+    changeRefreshInterval,
+    refreshData,
+  } = useDataRefresh()
+
   const [filteredData, setFilteredData] = useState<InsuranceCall[]>([])
   const [regionFilteredData, setRegionFilteredData] = useState<InsuranceCall[]>([])
-  const [dateFilter, setDateFilter] = useState<"today" | "past30days" | "all">("all") // Changed default to "all"
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null)
+  const [dateFilter, setDateFilter] = useState<"today" | "past30days" | "all">("all")
 
-  // Auto-refresh state
-  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true)
-  const [refreshInterval, setRefreshInterval] = useState(DEFAULT_REFRESH_INTERVAL)
-  const [nextRefreshIn, setNextRefreshIn] = useState(refreshInterval)
-  const intervalRef = useRef<NodeJS.Timeout | null>(null)
-  const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null)
-
-  // Fetch data function
-  const fetchData = useCallback(async (showLoading = true) => {
-    try {
-      if (showLoading) {
-        setLoading(true)
-      }
-      setError(null)
-      const result = await parseCSVData()
-
-      if (result.length === 0) {
-        throw new Error("No data returned from the source")
-      }
-
-      setData(result)
-      setLastRefreshed(new Date())
-
-      // Apply initial filter (all data since we changed the default)
-      setRegionFilteredData(result)
-      setFilteredData(result)
-    } catch (error) {
-      console.error("Error loading data:", error)
-      setError("Failed to load data. Please check if the Google Sheet is published and accessible.")
-    } finally {
-      if (showLoading) {
-        setLoading(false)
-      }
-    }
+  // Handle region/city filter changes
+  const handleRegionFilterChange = useCallback((newFilteredData: InsuranceCall[]) => {
+    setRegionFilteredData(newFilteredData)
   }, [])
 
-  // Initial data load
-  useEffect(() => {
-    fetchData()
-  }, [fetchData])
-
-  // Auto-refresh setup
-  useEffect(() => {
-    // Clear any existing intervals
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current)
-      intervalRef.current = null
-    }
-
-    if (countdownIntervalRef.current) {
-      clearInterval(countdownIntervalRef.current)
-      countdownIntervalRef.current = null
-    }
-
-    // Set up new intervals if auto-refresh is enabled
-    if (autoRefreshEnabled) {
-      // Set up the data refresh interval
-      intervalRef.current = setInterval(() => {
-        fetchData(false) // Don't show loading indicator for auto-refresh
-        setNextRefreshIn(refreshInterval) // Reset countdown
-      }, refreshInterval)
-
-      // Set up countdown timer (updates every second)
-      setNextRefreshIn(refreshInterval)
-      countdownIntervalRef.current = setInterval(() => {
-        setNextRefreshIn((prev) => Math.max(0, prev - 1000))
-      }, 1000)
-    }
-
-    // Cleanup on unmount
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current)
-      if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current)
-    }
-  }, [autoRefreshEnabled, refreshInterval, fetchData])
-
-  // Toggle auto-refresh
-  const toggleAutoRefresh = useCallback(() => {
-    setAutoRefreshEnabled((prev) => !prev)
+  // Handle date filter changes
+  const handleDateFilterChange = useCallback((filter: "today" | "past30days" | "all") => {
+    setDateFilter(filter)
   }, [])
-
-  // Change refresh interval
-  const changeRefreshInterval = useCallback((minutes: number) => {
-    const newInterval = minutes * 60 * 1000
-    setRefreshInterval(newInterval)
-    setNextRefreshIn(newInterval)
-  }, [])
-
-  // Manual refresh function
-  const refreshData = useCallback(async () => {
-    await fetchData(true)
-    // Reset the countdown timer after manual refresh
-    if (autoRefreshEnabled) {
-      setNextRefreshIn(refreshInterval)
-    }
-  }, [fetchData, autoRefreshEnabled, refreshInterval])
 
   // Apply date filter to the region-filtered data
-  useEffect(() => {
+  React.useEffect(() => {
     if (dateFilter === "all") {
       setFilteredData(regionFilteredData)
       return
@@ -151,48 +68,30 @@ const Dashboard: React.FC = () => {
     setFilteredData(dateFiltered)
   }, [dateFilter, regionFilteredData])
 
-  // Handle region/city filter changes
-  const handleRegionFilterChange = useCallback((newFilteredData: InsuranceCall[]) => {
-    setRegionFilteredData(newFilteredData)
-  }, [])
-
-  // Handle date filter changes
-  const handleDateFilterChange = useCallback((filter: "today" | "past30days" | "all") => {
-    setDateFilter(filter)
-  }, [])
+  // Update regionFilteredData when main data changes
+  React.useEffect(() => {
+    setRegionFilteredData(data)
+  }, [data])
 
   const complaintDistribution = React.useMemo(() => {
     if (!filteredData.length) return null
     const { labels, data: counts } = getNatureOfComplaintsDistribution(filteredData)
 
-    // Generate distinct colors for each complaint type
     const distinctColors = [
-      "rgba(255, 99, 132, 0.7)", // Red
-      "rgba(54, 162, 235, 0.7)", // Blue
-      "rgba(255, 206, 86, 0.7)", // Yellow
-      "rgba(75, 192, 192, 0.7)", // Teal
-      "rgba(153, 102, 255, 0.7)", // Purple
-      "rgba(255, 159, 64, 0.7)", // Orange
-      "rgba(29, 209, 161, 0.7)", // Green
-      "rgba(238, 90, 36, 0.7)", // Bright Orange
-      "rgba(106, 137, 204, 0.7)", // Soft Blue
-      "rgba(241, 196, 15, 0.7)", // Amber
+      "rgba(255, 99, 132, 0.7)",
+      "rgba(54, 162, 235, 0.7)",
+      "rgba(255, 206, 86, 0.7)",
+      "rgba(75, 192, 192, 0.7)",
+      "rgba(153, 102, 255, 0.7)",
+      "rgba(255, 159, 64, 0.7)",
+      "rgba(29, 209, 161, 0.7)",
+      "rgba(238, 90, 36, 0.7)",
+      "rgba(106, 137, 204, 0.7)",
+      "rgba(241, 196, 15, 0.7)",
     ]
 
-    const distinctBorderColors = [
-      "rgba(255, 99, 132, 1)", // Red
-      "rgba(54, 162, 235, 1)", // Blue
-      "rgba(255, 206, 86, 1)", // Yellow
-      "rgba(75, 192, 192, 1)", // Teal
-      "rgba(153, 102, 255, 1)", // Purple
-      "rgba(255, 159, 64, 1)", // Orange
-      "rgba(29, 209, 161, 1)", // Green
-      "rgba(238, 90, 36, 1)", // Bright Orange
-      "rgba(106, 137, 204, 1)", // Soft Blue
-      "rgba(241, 196, 15, 1)", // Amber
-    ]
+    const distinctBorderColors = distinctColors.map((color) => color.replace("0.7", "1"))
 
-    // Ensure we have enough colors for all complaint types
     const backgroundColors = labels.map((_, i) => distinctColors[i % distinctColors.length])
     const borderColors = labels.map((_, i) => distinctBorderColors[i % distinctBorderColors.length])
 
@@ -252,7 +151,6 @@ const Dashboard: React.FC = () => {
     return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`
   }
 
-  // Show loader while data is being fetched
   if (loading) {
     return <Loader />
   }
@@ -301,20 +199,16 @@ const Dashboard: React.FC = () => {
           onRefresh={refreshData}
           autoRefreshEnabled={autoRefreshEnabled}
           onToggleAutoRefresh={toggleAutoRefresh}
-          refreshInterval={refreshInterval / (60 * 1000)} // Convert to minutes
+          refreshInterval={refreshInterval}
           onChangeRefreshInterval={changeRefreshInterval}
           nextRefreshIn={formatCountdown(nextRefreshIn)}
           lastRefreshed={lastRefreshed}
         />
 
         <div className="mt-8">
-          {/* Date filter */}
           <DateFilter dateFilter={dateFilter} onDateFilterChange={handleDateFilterChange} />
-
-          {/* Region/City filter */}
           <RegionCityFilter data={data} onFilterChange={handleRegionFilterChange} />
 
-          {/* Date range info */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6">
             <span className="text-blue-800 font-medium">Showing data for: {getDateRangeText(dateFilter)}</span>
           </div>
@@ -325,7 +219,6 @@ const Dashboard: React.FC = () => {
               <button
                 onClick={() => {
                   setDateFilter("all")
-                  // Reset region filter by passing all data
                   handleRegionFilterChange(data)
                 }}
                 className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
@@ -337,28 +230,25 @@ const Dashboard: React.FC = () => {
             <>
               <DataSummary data={filteredData} />
 
-              {/* Complaint Type Distribution (full width) */}
               <div className="grid grid-cols-1 gap-6 mb-6">
                 {complaintDistribution && <InsuranceDistribution chartData={complaintDistribution} />}
               </div>
 
-              {/* Query Status Distribution (full width) - Removed CallsTimeOfDay */}
               <div className="grid grid-cols-1 gap-6 mb-6">
                 {statusDistribution && <QueryStatusDistribution chartData={statusDistribution} />}
               </div>
 
-              {/* Call Distribution by Time (full width) */}
               <div className="grid grid-cols-1 gap-6 mb-6">
                 {simplifiedTimeData && <SimplifiedTimeDistribution timeData={simplifiedTimeData} />}
               </div>
 
-              {/* Complaint Types by Time of Day (full width) */}
               <div className="grid grid-cols-1 gap-6 mb-6">
                 <InsuranceByTimeOfDay data={filteredData} />
               </div>
 
-              {/* Query Status by Zone (full width) */}
-              <div className="grid grid-cols-1 gap-6 mb-6">{zoneData && <ZoneDistribution zoneData={zoneData} />}</div>
+              <div className="grid grid-cols-1 gap-6 mb-6">
+                {zoneData && <ZoneDistribution zoneData={zoneData} />}
+              </div>
             </>
           )}
         </div>
