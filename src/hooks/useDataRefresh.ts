@@ -149,7 +149,7 @@ export const useDataRefresh = () => {
 
   // Manual refresh function
   const refreshData = useCallback(async () => {
-    const result = await fetchData(true, true) // Force bypass cache on manual refresh
+    const result = await fetchData(false, true) // Force bypass cache on manual refresh
     if (autoRefreshEnabled) {
       setNextRefreshIn(refreshInterval)
     }

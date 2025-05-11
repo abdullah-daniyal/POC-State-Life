@@ -15,7 +15,7 @@ const Header: React.FC<HeaderProps> = ({
   onRefresh,
   autoRefreshEnabled = false,
   onToggleAutoRefresh,
-  refreshInterval = 5,
+  refreshInterval = 1,
   onChangeRefreshInterval,
   nextRefreshIn = "",
   lastRefreshed = null,
@@ -24,6 +24,15 @@ const Header: React.FC<HeaderProps> = ({
 
   // Available refresh intervals in minutes
   const refreshIntervals = [1, 5, 10, 15, 30, 60];
+
+  // Handle refresh click with preventDefault
+  const handleRefreshClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (onRefresh) {
+      onRefresh();
+      setShowSettings(false); // Close settings panel if open
+    }
+  };
 
   return (
     <header className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-4 md:p-6 rounded-xl shadow-lg">
@@ -104,25 +113,22 @@ const Header: React.FC<HeaderProps> = ({
                     </div>
                   </div>
 
-                  <div className="pt-2 border-t border-gray-200">
+                  {/* <div className="pt-2 border-t border-gray-200">
                     <button
-                      onClick={() => {
-                        onRefresh?.();
-                        setShowSettings(false);
-                      }}
+                      onClick={handleRefreshClick}
                       className="w-full flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md transition-colors text-sm"
                     >
                       <RefreshCw className="h-3 w-3 mr-2" />
                       Refresh Now
                     </button>
-                  </div>
+                  </div> */}
                 </div>
               )}
             </div>
 
             {onRefresh && (
               <button
-                onClick={onRefresh}
+                onClick={handleRefreshClick}
                 className="flex items-center bg-white/20 hover:bg-white/30 backdrop-blur-sm px-2 py-1.5 md:px-4 md:py-2 rounded-lg transition-colors"
                 aria-label="Refresh data"
               >
