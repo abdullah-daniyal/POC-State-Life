@@ -15,9 +15,9 @@ const InsuranceByTimeOfDay: React.FC<InsuranceByTimeOfDayProps> = ({ data }) => 
   if (!data || data.length === 0) {
     return (
       <div className="bg-white rounded-xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">Complaint Types by Time of Day</h2>
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">Query Types by Time of Day</h2>
         <div className="w-full h-[300px] md:h-[350px] flex items-center justify-center">
-          <p className="text-gray-500">No complaint type data available</p>
+          <p className="text-gray-500">No query type data available</p>
         </div>
       </div>
     )
@@ -90,7 +90,7 @@ const InsuranceByTimeOfDay: React.FC<InsuranceByTimeOfDayProps> = ({ data }) => 
 
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl">
-      <h2 className="text-2xl font-bold text-gray-800 mb-4">Complaint Types by Time of Day</h2>
+      <h2 className="text-2xl font-bold text-gray-800 mb-4">Query Types by Time of Day</h2>
 
       {/* Add a note about the time slots */}
       <div className="mb-4 p-3 bg-gray-50 rounded-lg">

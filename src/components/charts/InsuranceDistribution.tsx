@@ -14,9 +14,9 @@ const InsuranceDistribution: React.FC<InsuranceDistributionProps> = ({ chartData
   if (!chartData || !chartData.labels || !chartData.datasets || chartData.datasets.length === 0) {
     return (
       <div className="bg-white rounded-xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">Complaint Type Distribution</h2>
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">Query Type Distribution</h2>
         <div className="w-full h-[300px] md:h-[350px] flex items-center justify-center">
-          <p className="text-gray-500">No complaint data available</p>
+          <p className="text-gray-500">No query data available</p>
         </div>
       </div>
     )
@@ -24,7 +24,7 @@ const InsuranceDistribution: React.FC<InsuranceDistributionProps> = ({ chartData
 
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl">
-      <h2 className="text-2xl font-bold text-gray-800 mb-4">Complaint Type Distribution</h2>
+      <h2 className="text-2xl font-bold text-gray-800 mb-4">Query Type Distribution</h2>
       <div className="w-full h-[300px] md:h-[350px]">
         <Pie
           data={chartData}
