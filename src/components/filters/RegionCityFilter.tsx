@@ -41,6 +41,18 @@ const regionsData: RegionData[] = [
     name: "KPK REGION",
     cities: ["Peshawar", "Abbottabad", "Swat", "Kohat"],
   },
+  {
+    name: "TAKAFUL",
+    cities: ["Takaful"],
+  },
+  {
+    name: "GROUP AND PENSION",
+    cities: ["Group and Pension"],
+  },
+  {
+    name: "BANCA",
+    cities: ["Banca"],
+  }
 ]
 
 interface RegionCityFilterProps {
